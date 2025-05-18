@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>br.imd.gcm</groupId>
-	<artifactId>PontBlank</artifactId>
+	<artifactId>PointBlank</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>PontBlank</name>
+	<name>PointBlank</name>
 	<description>PointBlank é um sistema desenvolvido como parte da disciplina DIM0517 - Gerência de Configuração e Mudanças - T01 (2025.1) do curso de Tecnologia da Informação no Instituto Metrópole Digital (IMD) da Universidade Federal do Rio Grande do Norte (UFRN).</description>
 	<url/>
 	<licenses>

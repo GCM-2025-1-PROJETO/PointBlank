@@ -1,10 +1,10 @@
-package br.imd.gcm.PontBlank
+package br.imd.gcm.PointBlank
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class PontBlankApplicationTests {
+class PointBlankApplicationTests {
 
 	@Test
 	fun contextLoads() {
