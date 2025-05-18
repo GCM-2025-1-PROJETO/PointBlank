@@ -27,4 +27,9 @@ class AccountService(
             return entity
         }
     }
+
+    fun getBalance(id: Long): Double {
+        val account = findByIdOrThrow(id)
+        return account.balance
+    }
 }

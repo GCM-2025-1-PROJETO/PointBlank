@@ -3,6 +3,7 @@ package br.imd.gcm.PointBlank.controllers
 import br.imd.gcm.PointBlank.exception.DuplicateAccountException
 import br.imd.gcm.PointBlank.model.Account
 import br.imd.gcm.PointBlank.services.AccountService
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -20,6 +21,16 @@ class AccountController(private val accountService: AccountService) {
         accountService.findById(id)
             .map { ResponseEntity.ok(it) }
             .orElse(ResponseEntity.notFound().build())
+
+    @GetMapping("/{id}/balance")
+    fun getBalance(@PathVariable id: Long): ResponseEntity<Map<String, Double>> {
+        return try {
+            val balance = accountService.getBalance(id)
+            ResponseEntity.ok(mapOf("balance" to balance))
+        } catch (e: EntityNotFoundException) {
+            ResponseEntity.notFound().build()
+        }
+    }
 
     @PostMapping("/request")
     fun create(): ResponseEntity<Any> {
