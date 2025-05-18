@@ -13,3 +13,8 @@ spring:
     hibernate:
       ddl-auto: update
     show-sql: true
+
+info:
+  app:
+    name: PointBlank
+    version: @project.version@
