@@ -38,6 +38,16 @@ class AccountController(private val accountService: AccountService) {
     }
 
     @PostMapping("/request")
+    fun create(): ResponseEntity<Any> {
+        return try {
+            val balance = accountService.getBalance(id)
+            ResponseEntity.ok(mapOf("balance" to balance))
+        } catch (e: EntityNotFoundException) {
+            ResponseEntity.notFound().build()
+        }
+    }
+
+    @PostMapping("/request")
     fun create(@RequestBody request: AccountCreationRequest): ResponseEntity<Any> {
         return try {
             val account: Account = when (request.type.lowercase()) {
