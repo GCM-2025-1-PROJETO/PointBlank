@@ -22,7 +22,7 @@ abstract class BaseService<T : AbstractEntity>(
     fun findByIdOrThrow(id: Long): T =
         repository.findById(id).orElseThrow { NoSuchElementException("ID $id não encontrado") }
 
-    fun save(entity: T): T = repository.save(entity)
+    open fun save(entity: T): T = repository.save(entity)
 
     fun deleteById(id: Long) {
         if (!repository.existsById(id)) {
