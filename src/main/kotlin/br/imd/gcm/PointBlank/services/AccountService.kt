@@ -17,10 +17,14 @@ class AccountService(
         return save(existing)
     }
 
-    override fun save(entity: Account): Account {
-        accountRepository.findByNumber(entity.number)?.let {
-            throw DuplicateAccountException("Account number ${entity.number} already exists")
+    fun requestAccount(): Account {
+        val newAccountNumber = accountRepository.getLastID() + 1
+        Account(
+            number = newAccountNumber,
+            balance = 0.0
+        ).let { entity ->
+            accountRepository.save(entity)
+            return entity
         }
-        return accountRepository.save(entity)
     }
 }

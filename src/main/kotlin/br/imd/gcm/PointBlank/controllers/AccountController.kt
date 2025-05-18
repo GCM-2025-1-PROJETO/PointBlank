@@ -21,10 +21,10 @@ class AccountController(private val accountService: AccountService) {
             .map { ResponseEntity.ok(it) }
             .orElse(ResponseEntity.notFound().build())
 
-    @PostMapping
-    fun create(@RequestBody account: Account): ResponseEntity<Any> {
+    @PostMapping("/request")
+    fun create(): ResponseEntity<Any> {
         return try {
-            ResponseEntity.ok(accountService.save(account))
+            ResponseEntity.ok(accountService.requestAccount())
         } catch (e: DuplicateAccountException) {
             ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("error" to e.message))
         }
