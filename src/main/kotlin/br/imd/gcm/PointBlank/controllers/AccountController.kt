@@ -41,6 +41,7 @@ class AccountController(private val accountService: AccountService) {
         }
     }
 
+    @PutMapping("/{id}/credit")
     fun credit(
         @PathVariable id: Long,
         @RequestParam amount: Double
