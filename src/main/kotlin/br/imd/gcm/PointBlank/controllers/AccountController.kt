@@ -1,7 +1,11 @@
 package br.imd.gcm.PointBlank.controllers
 
+import br.imd.gcm.PointBlank.exception.AccountNotFoundException
 import br.imd.gcm.PointBlank.exception.DuplicateAccountException
+import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
+import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
 import br.imd.gcm.PointBlank.model.Account
+import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
 import br.imd.gcm.PointBlank.services.AccountService
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.HttpStatus
@@ -64,13 +68,20 @@ class AccountController(private val accountService: AccountService) {
         return ResponseEntity.ok(updatedAccount)
     }
 
-    @PutMapping("/{id}")
-    fun update(@PathVariable id: Long, @RequestBody account: Account): ResponseEntity<Account> =
-        ResponseEntity.ok(accountService.update(id, account))
-
-    @DeleteMapping("/{id}")
-    fun delete(@PathVariable id: Long): ResponseEntity<Void> {
-        accountService.deleteById(id)
-        return ResponseEntity.noContent().build()
+    @PutMapping("/transfer")
+    fun transfer(
+        @RequestBody transferRequest: AmountTransferDTO
+    ): ResponseEntity<Any> {
+        return try {
+            ResponseEntity.ok().body(accountService.transfer(transferRequest))
+        } catch (e: AccountNotFoundException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
+        } catch (e: InsufficientBalanceException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
+        } catch (e: InvalidTransferAmountException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
+        } catch (e: Exception) {
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+        }
     }
 }

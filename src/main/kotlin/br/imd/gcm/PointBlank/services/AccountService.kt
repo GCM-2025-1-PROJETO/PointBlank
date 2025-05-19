@@ -1,22 +1,20 @@
 package br.imd.gcm.PointBlank.services
 
+import br.imd.gcm.PointBlank.exception.AccountNotFoundException
 import br.imd.gcm.PointBlank.model.Account
 import br.imd.gcm.PointBlank.repositories.AccountRepository
 import org.springframework.stereotype.Service
 import br.imd.gcm.PointBlank.exception.DuplicateAccountException
+import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
+import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
+import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
+import br.imd.gcm.PointBlank.model.dto.AmountTransferResponse
 import java.math.BigDecimal
 
 @Service
 class AccountService(
     private val accountRepository: AccountRepository
 ) : BaseService<Account>(accountRepository) {
-
-    fun update(id: Long, updated: Account): Account {
-        val existing = findByIdOrThrow(id)
-        existing.number = updated.number
-        existing.balance = updated.balance
-        return save(existing)
-    }
 
     fun requestAccount(): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
@@ -49,6 +47,34 @@ class AccountService(
 
         account.balance = account.balance - amount
         return accountRepository.save(account)
+    }
+
+    fun transfer(transferRequest: AmountTransferDTO): AmountTransferResponse {
+        if (transferRequest.amount <= 0) {
+            throw InvalidTransferAmountException("O valor da transferência deve ser maior que zero.")
+        }
+
+        val originAccount = accountRepository.findById(transferRequest.originAccountNumber)
+            .orElseThrow { AccountNotFoundException("Conta de origem não encontrada") }
+        val targetAccount = accountRepository.findById(transferRequest.targetAccountNumber)
+            .orElseThrow { AccountNotFoundException("Conta de destino não encontrada") }
+
+        if (originAccount.balance < transferRequest.amount) {
+            throw InsufficientBalanceException("Saldo insuficiente para a transferência")
+        }
+
+        originAccount.balance -= transferRequest.amount
+        targetAccount.balance += transferRequest.amount
+
+        accountRepository.save(originAccount)
+        accountRepository.save(targetAccount)
+
+        return AmountTransferResponse(
+            originAccountNumber = originAccount.number,
+            originAccountBalance = originAccount.balance,
+            targetAccountNumber = targetAccount.number,
+            targetAccountBalance = targetAccount.balance
+        )
     }
 
 }
