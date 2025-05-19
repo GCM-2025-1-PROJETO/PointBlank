@@ -58,9 +58,9 @@ class AccountController(private val accountService: AccountService) {
         }
     }
 
-    @PostMapping("/{id}/debit")
-    fun debit(@PathVariable accountId: Long, @RequestParam amount: Double): ResponseEntity<Account> {
-        val updatedAccount = accountService.debit(accountId, amount)
+    @PutMapping("/{id}/debit")
+    fun debit(@PathVariable id: Long, @RequestParam amount: Double): ResponseEntity<Account> {
+        val updatedAccount = accountService.debit(id, amount)
         return ResponseEntity.ok(updatedAccount)
     }
 
