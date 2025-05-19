@@ -32,4 +32,11 @@ class AccountService(
         val account = findByIdOrThrow(id)
         return account.balance
     }
+
+    fun credit(id: Long, amount: Double): Account {
+        require(amount > 0) { "O valor de crédito deve ser positivo" }
+        val account = findByIdOrThrow(id)
+        account.balance += amount
+        return save(account)
+    }
 }
