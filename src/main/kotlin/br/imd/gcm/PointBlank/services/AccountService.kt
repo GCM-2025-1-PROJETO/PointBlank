@@ -4,6 +4,7 @@ import br.imd.gcm.PointBlank.model.Account
 import br.imd.gcm.PointBlank.repositories.AccountRepository
 import org.springframework.stereotype.Service
 import br.imd.gcm.PointBlank.exception.DuplicateAccountException
+import java.math.BigDecimal
 
 @Service
 class AccountService(
@@ -39,4 +40,15 @@ class AccountService(
         account.balance += amount
         return save(account)
     }
+
+    fun debit(accountId: Long, amount: Double): Account {
+        require(amount > 0) { "O valor do débito deve ser maior que zero." }
+
+        val account = accountRepository.findById(accountId)
+            .orElseThrow { RuntimeException("Conta não encontrada") }
+
+        account.balance = account.balance - amount
+        return accountRepository.save(account)
+    }
+
 }
