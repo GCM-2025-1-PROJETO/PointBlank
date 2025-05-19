@@ -41,6 +41,23 @@ class AccountController(private val accountService: AccountService) {
         }
     }
 
+    @PutMapping("/{id}/credit")
+    fun credit(
+        @PathVariable id: Long,
+        @RequestParam amount: Double
+    ): ResponseEntity<Account> {
+        return try {
+            val updated = accountService.credit(id, amount)
+            ResponseEntity.ok(updated)
+        } catch (ex: NoSuchElementException) {
+            ResponseEntity.notFound().build()
+        } catch (ex: IllegalArgumentException) {
+            ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(null)
+        }
+    }
+
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @RequestBody account: Account): ResponseEntity<Account> =
         ResponseEntity.ok(accountService.update(id, account))
