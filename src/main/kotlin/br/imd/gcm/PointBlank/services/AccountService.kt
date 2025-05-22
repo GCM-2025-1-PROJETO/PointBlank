@@ -7,13 +7,16 @@ import org.springframework.stereotype.Service
 import br.imd.gcm.PointBlank.exception.DuplicateAccountException
 import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
 import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
+import br.imd.gcm.PointBlank.model.BonusAccount
 import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
 import br.imd.gcm.PointBlank.model.dto.AmountTransferResponse
+import br.imd.gcm.PointBlank.repositories.BonusAccountRepository
 import java.math.BigDecimal
 
 @Service
 class AccountService(
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val bonusAccountRepository: BonusAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
     fun requestAccount(): Account {
@@ -36,8 +39,15 @@ class AccountService(
         require(amount > 0) { "O valor de crédito deve ser positivo" }
         val account = findByIdOrThrow(id)
         account.balance += amount
+
+        if (account is BonusAccount) {
+            account.points += (amount / 100).toInt()
+            return bonusAccountRepository.save(account)
+        }
+
         return save(account)
     }
+
 
     fun debit(accountId: Long, amount: Double): Account {
         require(amount > 0) { "O valor do débito deve ser maior que zero." }
@@ -64,10 +74,16 @@ class AccountService(
         }
 
         originAccount.balance -= transferRequest.amount
+
         targetAccount.balance += transferRequest.amount
+        if (targetAccount is BonusAccount) {
+            targetAccount.points += (transferRequest.amount / 200).toInt()
+            bonusAccountRepository.save(targetAccount)
+        } else {
+            accountRepository.save(targetAccount)
+        }
 
         accountRepository.save(originAccount)
-        accountRepository.save(targetAccount)
 
         return AmountTransferResponse(
             originAccountNumber = originAccount.number,
