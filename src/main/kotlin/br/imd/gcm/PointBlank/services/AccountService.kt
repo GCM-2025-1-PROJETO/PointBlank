@@ -122,8 +122,8 @@ class AccountService(
         }
 
         originAccount.balance -= transferRequest.amount
-
         targetAccount.balance += transferRequest.amount
+
         if (targetAccount is BonusAccount) {
             targetAccount.points += (transferRequest.amount / 200).toInt()
             bonusAccountRepository.save(targetAccount)
