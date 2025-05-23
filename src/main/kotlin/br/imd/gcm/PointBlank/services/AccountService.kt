@@ -7,16 +7,22 @@ import org.springframework.stereotype.Service
 import br.imd.gcm.PointBlank.exception.DuplicateAccountException
 import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
 import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
+import br.imd.gcm.PointBlank.model.BonusAccount
+import br.imd.gcm.PointBlank.model.SavingsAccount
 import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
 import br.imd.gcm.PointBlank.model.dto.AmountTransferResponse
+import br.imd.gcm.PointBlank.repositories.BonusAccountRepository
+import br.imd.gcm.PointBlank.repositories.SavingsAccountRepository
 import java.math.BigDecimal
 
 @Service
 class AccountService(
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val bonusAccountRepository: BonusAccountRepository,
+    private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
-    fun requestAccount(): Account {
+    fun requestNormalAccount(): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
         Account(
             number = newAccountNumber,
@@ -27,6 +33,34 @@ class AccountService(
         }
     }
 
+    fun requestBonusAccount(): BonusAccount {
+        val newAccountNumber = bonusAccountRepository.getLastID() + 1
+        BonusAccount(
+            number = newAccountNumber,
+            balance = 0.0
+        ).let { entity ->
+            bonusAccountRepository.save(entity)
+            return entity
+        }
+    }
+
+    fun requestSavingsAccount(): SavingsAccount {
+        val newNumber = accountRepository.getLastID() + 1
+        val acc = SavingsAccount(number = newNumber, balance = 0.0)
+        return savingsAccountRepository.save(acc)
+    }
+
+    fun renderInterest(taxaPercentual: Double): List<SavingsAccount> {
+        require(taxaPercentual >= 0) { "Taxa de juros deve ser >= 0" }
+        val all = savingsAccountRepository.findAll()
+        val fator = 1 + taxaPercentual / 100.0
+        val updated = all.map { acct ->
+            acct.balance = acct.balance * fator
+            acct
+        }
+        return savingsAccountRepository.saveAll(updated)
+    }
+
     fun getBalance(id: Long): Double {
         val account = findByIdOrThrow(id)
         return account.balance
@@ -34,10 +68,18 @@ class AccountService(
 
     fun credit(id: Long, amount: Double): Account {
         require(amount > 0) { "O valor de crédito deve ser positivo" }
+
         val account = findByIdOrThrow(id)
         account.balance += amount
+
+        if (account is BonusAccount) {
+            account.points += (amount / 100).toInt()
+            return bonusAccountRepository.save(account)
+        }
+
         return save(account)
     }
+
 
     fun debit(accountId: Long, amount: Double): Account {
         require(amount > 0) { "O valor do débito deve ser maior que zero." }
@@ -70,8 +112,14 @@ class AccountService(
         originAccount.balance -= transferRequest.amount
         targetAccount.balance += transferRequest.amount
 
+        if (targetAccount is BonusAccount) {
+            targetAccount.points += (transferRequest.amount / 200).toInt()
+            bonusAccountRepository.save(targetAccount)
+        } else {
+            accountRepository.save(targetAccount)
+        }
+
         accountRepository.save(originAccount)
-        accountRepository.save(targetAccount)
 
         return AmountTransferResponse(
             originAccountNumber = originAccount.number,
