@@ -6,6 +6,7 @@ import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
 import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
 import br.imd.gcm.PointBlank.model.Account
 import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
+import br.imd.gcm.PointBlank.model.dto.requests.AccountCreationRequest
 import br.imd.gcm.PointBlank.services.AccountService
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.HttpStatus
@@ -37,9 +38,14 @@ class AccountController(private val accountService: AccountService) {
     }
 
     @PostMapping("/request")
-    fun create(): ResponseEntity<Any> {
+    fun create(@RequestBody request: AccountCreationRequest): ResponseEntity<Any> {
         return try {
-            ResponseEntity.ok(accountService.requestAccount())
+            val account = when (request.type.lowercase()) {
+                "normal" -> accountService.requestNormalAccount()
+                "bonus" -> accountService.requestBonusAccount()
+                else -> return ResponseEntity.badRequest().body(mapOf("error" to "Tipo de conta inválido"))
+            }
+            ResponseEntity.ok(account)
         } catch (e: DuplicateAccountException) {
             ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("error" to e.message))
         }

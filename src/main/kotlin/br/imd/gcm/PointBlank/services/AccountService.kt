@@ -19,13 +19,24 @@ class AccountService(
     private val bonusAccountRepository: BonusAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
-    fun requestAccount(): Account {
+    fun requestNormalAccount(): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
         Account(
             number = newAccountNumber,
             balance = 0.0
         ).let { entity ->
             accountRepository.save(entity)
+            return entity
+        }
+    }
+
+    fun requestBonusAccount(): BonusAccount {
+        val newAccountNumber = bonusAccountRepository.getLastID() + 1
+        BonusAccount(
+            number = newAccountNumber,
+            balance = 0.0
+        ).let { entity ->
+            bonusAccountRepository.save(entity)
             return entity
         }
     }
