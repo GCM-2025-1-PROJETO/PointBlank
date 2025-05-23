@@ -67,7 +67,11 @@ class AccountService(
         val account = accountRepository.findById(accountId)
             .orElseThrow { RuntimeException("Conta não encontrada") }
 
-        account.balance = account.balance - amount
+        if(account.balance < amount) {
+            throw InsufficientBalanceException("Saldo insuficiente para realizar o débito.")
+        }
+
+        account.balance -= amount
         return accountRepository.save(account)
     }
 
