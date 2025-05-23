@@ -48,6 +48,7 @@ class AccountService(
 
     fun credit(id: Long, amount: Double): Account {
         require(amount > 0) { "O valor de crédito deve ser positivo" }
+
         val account = findByIdOrThrow(id)
         account.balance += amount
 
@@ -85,8 +86,8 @@ class AccountService(
         }
 
         originAccount.balance -= transferRequest.amount
-
         targetAccount.balance += transferRequest.amount
+
         if (targetAccount is BonusAccount) {
             targetAccount.points += (transferRequest.amount / 200).toInt()
             bonusAccountRepository.save(targetAccount)
