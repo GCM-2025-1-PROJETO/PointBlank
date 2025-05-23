@@ -38,7 +38,7 @@ class AccountController(private val accountService: AccountService) {
     }
 
     @PostMapping("/request")
-    fun create(): ResponseEntity<Any> {
+    fun create(@RequestBody request: AccountCreationRequest): ResponseEntity<Any> {
         return try {
             val balance = accountService.getBalance(id)
             ResponseEntity.ok(mapOf("balance" to balance))
