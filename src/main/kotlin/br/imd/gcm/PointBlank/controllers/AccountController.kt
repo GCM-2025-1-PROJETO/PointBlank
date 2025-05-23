@@ -40,12 +40,16 @@ class AccountController(private val accountService: AccountService) {
     @PostMapping("/request")
     fun create(@RequestBody request: AccountCreationRequest): ResponseEntity<Any> {
         return try {
-            val account = when (request.type.lowercase()) {
-                "normal" -> accountService.requestNormalAccount()
-                "bonus" -> accountService.requestBonusAccount()
-                else -> return ResponseEntity.badRequest().body(mapOf("error" to "Tipo de conta inválido"))
+            val account: Account = when (request.type.lowercase()) {
+                "normal"  -> accountService.requestNormalAccount()
+                "bonus"   -> accountService.requestBonusAccount()
+                "savings", "poupanca" ->
+                    accountService.requestSavingsAccount()
+                else -> return ResponseEntity
+                    .badRequest()
+                    .body(mapOf("error" to "Tipo de conta inválido: ${request.type}"))
             }
-            ResponseEntity.ok(account)
+            ResponseEntity.status(HttpStatus.CREATED).body(account)
         } catch (e: DuplicateAccountException) {
             ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("error" to e.message))
         }
@@ -88,6 +92,16 @@ class AccountController(private val accountService: AccountService) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
+        }
+    }
+
+    @PutMapping("/render-juros")
+    fun renderJuros(@RequestParam taxa: Double): ResponseEntity<Any> {
+        return try {
+            val updatedList = accountService.renderInterest(taxa)
+            ResponseEntity.ok(updatedList)
+        } catch (ex: IllegalArgumentException) {
+            ResponseEntity.badRequest().body(mapOf("error" to ex.message))
         }
     }
 }

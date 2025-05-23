@@ -8,15 +8,18 @@ import br.imd.gcm.PointBlank.exception.DuplicateAccountException
 import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
 import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
 import br.imd.gcm.PointBlank.model.BonusAccount
+import br.imd.gcm.PointBlank.model.SavingsAccount
 import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
 import br.imd.gcm.PointBlank.model.dto.AmountTransferResponse
 import br.imd.gcm.PointBlank.repositories.BonusAccountRepository
+import br.imd.gcm.PointBlank.repositories.SavingsAccountRepository
 import java.math.BigDecimal
 
 @Service
 class AccountService(
     private val accountRepository: AccountRepository,
-    private val bonusAccountRepository: BonusAccountRepository
+    private val bonusAccountRepository: BonusAccountRepository,
+    private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
     fun requestNormalAccount(): Account {
@@ -39,6 +42,23 @@ class AccountService(
             bonusAccountRepository.save(entity)
             return entity
         }
+    }
+
+    fun requestSavingsAccount(): SavingsAccount {
+        val newNumber = accountRepository.getLastID() + 1
+        val acc = SavingsAccount(number = newNumber, balance = 0.0)
+        return savingsAccountRepository.save(acc)
+    }
+
+    fun renderInterest(taxaPercentual: Double): List<SavingsAccount> {
+        require(taxaPercentual >= 0) { "Taxa de juros deve ser >= 0" }
+        val all = savingsAccountRepository.findAll()
+        val fator = 1 + taxaPercentual / 100.0
+        val updated = all.map { acct ->
+            acct.balance = acct.balance * fator
+            acct
+        }
+        return savingsAccountRepository.saveAll(updated)
     }
 
     fun getBalance(id: Long): Double {
