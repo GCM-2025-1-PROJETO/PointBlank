@@ -8,9 +8,11 @@ import br.imd.gcm.PointBlank.exception.DuplicateAccountException
 import br.imd.gcm.PointBlank.exception.InsufficientBalanceException
 import br.imd.gcm.PointBlank.exception.InvalidTransferAmountException
 import br.imd.gcm.PointBlank.model.BonusAccount
+import br.imd.gcm.PointBlank.model.SavingsAccount
 import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
 import br.imd.gcm.PointBlank.model.dto.AmountTransferResponse
 import br.imd.gcm.PointBlank.repositories.BonusAccountRepository
+import br.imd.gcm.PointBlank.repositories.SavingsAccountRepository
 import java.math.BigDecimal
 
 @Service
