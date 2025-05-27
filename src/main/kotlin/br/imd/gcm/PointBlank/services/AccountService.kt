@@ -84,7 +84,7 @@ class AccountService(
         account.balance += amount
 
         if (account is BonusAccount) {
-            account.points += (amount / 100).toInt()
+            account.points += (amount / 150).toInt()
             return bonusAccountRepository.save(account)
         }
 
