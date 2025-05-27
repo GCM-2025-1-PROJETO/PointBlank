@@ -23,6 +23,13 @@ class AccountService(
     private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
+    fun update(id: Long, updated: Account): Account {
+        val existing = findByIdOrThrow(id)
+        existing.number = updated.number
+        existing.balance = updated.balance
+        return save(existing)
+    }
+
     fun requestNormalAccount(request: AccountCreationRequest): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
         Account(
@@ -78,7 +85,7 @@ class AccountService(
         account.balance += amount
 
         if (account is BonusAccount) {
-            account.points += (amount / 100).toInt()
+            account.points += (amount / 150).toInt()
             return bonusAccountRepository.save(account)
         }
 
