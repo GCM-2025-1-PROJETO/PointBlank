@@ -25,8 +25,6 @@ class AccountService(
     private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
-    private val NEGATIVE_BALANCE_LIMIT = -1000.0
-
     fun requestNormalAccount(): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
         Account(
@@ -56,9 +54,7 @@ class AccountService(
     }
 
     fun renderInterest(taxaPercentual: Double): List<SavingsAccount> {
-        if(taxaPercentual < 0) {
-            throw IllegalArgumentException("Taxa de juros deve ser >= 0")
-        }
+        require(taxaPercentual >= 0) { "Taxa de juros deve ser >= 0" }
         val all = savingsAccountRepository.findAll()
         val fator = 1 + taxaPercentual / 100.0
         val updated = all.map { acct ->
@@ -74,9 +70,7 @@ class AccountService(
     }
 
     fun credit(id: Long, amount: Double): Account {
-        if(amount < 0) {
-            throw IllegalArgumentException("O valor de crédito deve ser positivo")
-        }
+        require(amount > 0) { "O valor de crédito deve ser positivo" }
 
         val account = findByIdOrThrow(id)
         account.balance += amount
@@ -91,25 +85,16 @@ class AccountService(
 
 
     fun debit(accountId: Long, amount: Double): Account {
-
-        if(amount < 0) {
-            throw IllegalArgumentException("O valor do débito deve ser positivo")
-        }
+        require(amount > 0) { "O valor do débito deve ser maior que zero." }
 
         val account = accountRepository.findById(accountId)
             .orElseThrow { RuntimeException("Conta não encontrada") }
 
-        val newBalance = account.balance - amount
-
-        if (account is Account && account !is SavingsAccount && newBalance < NEGATIVE_BALANCE_LIMIT) {
-            throw InsufficientBalanceException("Débito excede o limite de saldo negativo de R$ -1.000,00.")
-        }
-        if (account is BonusAccount && newBalance < NEGATIVE_BALANCE_LIMIT) {
-            throw InsufficientBalanceException("Débito excede o limite de saldo negativo de R$ -1.000,00.")
+        if(account.balance < amount) {
+            throw InsufficientBalanceException("Saldo insuficiente para realizar o débito.")
         }
 
-
-        account.balance = newBalance
+        account.balance -= amount
         return accountRepository.save(account)
     }
 
@@ -123,16 +108,11 @@ class AccountService(
         val targetAccount = accountRepository.findById(transferRequest.targetAccountNumber)
             .orElseThrow { AccountNotFoundException("Conta de destino não encontrada") }
 
-        val newOriginBalance = originAccount.balance - transferRequest.amount
-
-        if (originAccount is Account && originAccount !is SavingsAccount && newOriginBalance < NEGATIVE_BALANCE_LIMIT) {
-            throw InsufficientBalanceException("Transferência excede o limite de saldo negativo de R$ -1.000,00 na conta de origem.")
-        }
-        if (originAccount is BonusAccount && newOriginBalance < NEGATIVE_BALANCE_LIMIT) {
-            throw InsufficientBalanceException("Transferência excede o limite de saldo negativo de R$ -1.000,00 na conta de origem.")
+        if (originAccount.balance < transferRequest.amount) {
+            throw InsufficientBalanceException("Saldo insuficiente para a transferência")
         }
 
-        originAccount.balance = newOriginBalance
+        originAccount.balance -= transferRequest.amount
         targetAccount.balance += transferRequest.amount
 
         if (targetAccount is BonusAccount) {
