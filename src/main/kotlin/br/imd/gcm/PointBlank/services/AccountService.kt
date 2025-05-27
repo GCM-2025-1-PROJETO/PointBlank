@@ -22,6 +22,8 @@ class AccountService(
     private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
+    private val NEGATIVE_BALANCE_LIMIT = -1000.0
+
     fun requestNormalAccount(): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
         Account(
@@ -87,11 +89,17 @@ class AccountService(
         val account = accountRepository.findById(accountId)
             .orElseThrow { RuntimeException("Conta não encontrada") }
 
-        if(account.balance < amount) {
-            throw InsufficientBalanceException("Saldo insuficiente para realizar o débito.")
+        val newBalance = account.balance - amount
+
+        if (account is Account && account !is SavingsAccount && newBalance < NEGATIVE_BALANCE_LIMIT) {
+            throw InsufficientBalanceException("Débito excede o limite de saldo negativo de R$ -1.000,00.")
+        }
+        if (account is BonusAccount && newBalance < NEGATIVE_BALANCE_LIMIT) {
+            throw InsufficientBalanceException("Débito excede o limite de saldo negativo de R$ -1.000,00.")
         }
 
-        account.balance -= amount
+
+        account.balance = newBalance
         return accountRepository.save(account)
     }
 
@@ -105,11 +113,16 @@ class AccountService(
         val targetAccount = accountRepository.findById(transferRequest.targetAccountNumber)
             .orElseThrow { AccountNotFoundException("Conta de destino não encontrada") }
 
-        if (originAccount.balance < transferRequest.amount) {
-            throw InsufficientBalanceException("Saldo insuficiente para a transferência")
+        val newOriginBalance = originAccount.balance - transferRequest.amount
+
+        if (originAccount is Account && originAccount !is SavingsAccount && newOriginBalance < NEGATIVE_BALANCE_LIMIT) {
+            throw InsufficientBalanceException("Transferência excede o limite de saldo negativo de R$ -1.000,00 na conta de origem.")
+        }
+        if (originAccount is BonusAccount && newOriginBalance < NEGATIVE_BALANCE_LIMIT) {
+            throw InsufficientBalanceException("Transferência excede o limite de saldo negativo de R$ -1.000,00 na conta de origem.")
         }
 
-        originAccount.balance -= transferRequest.amount
+        originAccount.balance = newOriginBalance
         targetAccount.balance += transferRequest.amount
 
         if (targetAccount is BonusAccount) {
