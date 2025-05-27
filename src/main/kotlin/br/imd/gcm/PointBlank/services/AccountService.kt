@@ -53,7 +53,9 @@ class AccountService(
     }
 
     fun renderInterest(taxaPercentual: Double): List<SavingsAccount> {
-        require(taxaPercentual >= 0) { "Taxa de juros deve ser >= 0" }
+        if(taxaPercentual < 0) {
+            throw IllegalArgumentException("Taxa de juros deve ser >= 0")
+        }
         val all = savingsAccountRepository.findAll()
         val fator = 1 + taxaPercentual / 100.0
         val updated = all.map { acct ->
@@ -69,7 +71,9 @@ class AccountService(
     }
 
     fun credit(id: Long, amount: Double): Account {
-        require(amount > 0) { "O valor de crédito deve ser positivo" }
+        if(amount < 0) {
+            throw IllegalArgumentException("O valor de crédito deve ser positivo")
+        }
 
         val account = findByIdOrThrow(id)
         account.balance += amount
@@ -84,7 +88,10 @@ class AccountService(
 
 
     fun debit(accountId: Long, amount: Double): Account {
-        require(amount > 0) { "O valor do débito deve ser maior que zero." }
+
+        if(amount < 0) {
+            throw IllegalArgumentException("O valor do débito deve ser positivo")
+        }
 
         val account = accountRepository.findById(accountId)
             .orElseThrow { RuntimeException("Conta não encontrada") }
