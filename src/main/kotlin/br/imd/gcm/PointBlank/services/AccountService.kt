@@ -11,8 +11,11 @@ import br.imd.gcm.PointBlank.model.BonusAccount
 import br.imd.gcm.PointBlank.model.SavingsAccount
 import br.imd.gcm.PointBlank.model.dto.AmountTransferDTO
 import br.imd.gcm.PointBlank.model.dto.AmountTransferResponse
+import br.imd.gcm.PointBlank.model.dto.requests.AccountCreationRequest
 import br.imd.gcm.PointBlank.repositories.BonusAccountRepository
 import br.imd.gcm.PointBlank.repositories.SavingsAccountRepository
+import io.swagger.v3.oas.annotations.parameters.RequestBody
+import jakarta.validation.Valid
 import java.math.BigDecimal
 
 @Service
@@ -44,9 +47,9 @@ class AccountService(
         }
     }
 
-    fun requestSavingsAccount(): SavingsAccount {
+    fun requestSavingsAccount(@RequestBody request: AccountCreationRequest): SavingsAccount {
         val newNumber = accountRepository.getLastID() + 1
-        val acc = SavingsAccount(number = newNumber, balance = 0.0)
+        val acc = SavingsAccount(number = newNumber, balance = request.balance)
         return savingsAccountRepository.save(acc)
     }
 
