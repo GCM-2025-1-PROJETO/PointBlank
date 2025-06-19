@@ -44,7 +44,7 @@ class AccountController(private val accountService: AccountService) {
                 "normal"  -> accountService.requestNormalAccount(request)
                 "bonus"   -> accountService.requestBonusAccount()
                 "savings", "poupanca" ->
-                    accountService.requestSavingsAccount()
+                    accountService.requestSavingsAccount(request)
                 else -> return ResponseEntity
                     .badRequest()
                     .body(mapOf("error" to "Tipo de conta inválido: ${request.type}"))
