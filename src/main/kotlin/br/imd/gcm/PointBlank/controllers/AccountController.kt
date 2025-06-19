@@ -90,6 +90,8 @@ class AccountController(private val accountService: AccountService) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         } catch (e: InvalidTransferAmountException) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
         }
