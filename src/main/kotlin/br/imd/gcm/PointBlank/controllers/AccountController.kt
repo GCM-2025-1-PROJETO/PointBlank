@@ -44,7 +44,7 @@ class AccountController(private val accountService: AccountService) {
                 "normal"  -> accountService.requestNormalAccount()
                 "bonus"   -> accountService.requestBonusAccount()
                 "savings", "poupanca" ->
-                    accountService.requestSavingsAccount(request)
+                    accountService.requestSavingsAccount()
                 else -> return ResponseEntity
                     .badRequest()
                     .body(mapOf("error" to "Tipo de conta inválido: ${request.type}"))
@@ -89,6 +89,8 @@ class AccountController(private val accountService: AccountService) {
         } catch (e: InsufficientBalanceException) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         } catch (e: InvalidTransferAmountException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
+        } catch (e: IllegalArgumentException) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.message)
         } catch (e: Exception) {
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.message)
