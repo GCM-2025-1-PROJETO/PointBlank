@@ -41,7 +41,7 @@ class AccountController(private val accountService: AccountService) {
     fun create(@RequestBody request: AccountCreationRequest): ResponseEntity<Any> {
         return try {
             val account: Account = when (request.type.lowercase()) {
-                "normal"  -> accountService.requestNormalAccount()
+                "normal"  -> accountService.requestNormalAccount(request)
                 "bonus"   -> accountService.requestBonusAccount()
                 "savings", "poupanca" ->
                     accountService.requestSavingsAccount(request)

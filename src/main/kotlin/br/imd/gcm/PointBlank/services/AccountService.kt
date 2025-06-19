@@ -25,13 +25,18 @@ class AccountService(
     private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
-    private val NEGATIVE_BALANCE_LIMIT = -1000.0
+    fun update(id: Long, updated: Account): Account {
+        val existing = findByIdOrThrow(id)
+        existing.number = updated.number
+        existing.balance = updated.balance
+        return save(existing)
+    }
 
-    fun requestNormalAccount(): Account {
+    fun requestNormalAccount(request: AccountCreationRequest): Account {
         val newAccountNumber = accountRepository.getLastID() + 1
         Account(
             number = newAccountNumber,
-            balance = 0.0
+            balance = (request.balance ?: 0.0)
         ).let { entity ->
             accountRepository.save(entity)
             return entity
