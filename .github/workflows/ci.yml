@@ -1,0 +1,39 @@
+name: CI PointBlank
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Resolver dependências, compilar e testar (Spring + Kotlin)
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Gerar e enviar tag build-<timestamp>
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+          TAG_NAME="build-${TIMESTAMP}"
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
