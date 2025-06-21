@@ -18,11 +18,11 @@ jobs:
         with:
           fetch-depth: 0 
 
-      - name: Configurar JDK 17
+      - name: Configurar JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
 
       - name: Garantir permissão de execução ao Maven Wrapper
