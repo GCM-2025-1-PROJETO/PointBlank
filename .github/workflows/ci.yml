@@ -2,9 +2,9 @@ name: CI PointBlank
 
 on:
   push:
-    branches: [develop]
+    branches: [main]
   pull_request:
-    branches: [develop]
+    branches: [main]
 
 jobs:
   build:
@@ -29,7 +29,7 @@ jobs:
         run: ./mvnw -B -ntp clean verify
 
       - name: Gerar e enviar tag build-<timestamp>
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           TIMESTAMP=$(date +"%Y%m%d%H%M%S")
           TAG_NAME="build-${TIMESTAMP}"
