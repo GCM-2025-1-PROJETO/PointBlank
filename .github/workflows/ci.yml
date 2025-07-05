@@ -77,3 +77,9 @@ jobs:
           mkdir -p build-artifacts
           zip -r "build-artifacts/${NEW_TAG}.zip" .
 
+      - name: Upload do pacote como artifact
+        if: github.ref == 'refs/heads/staging'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NEW_RC_TAG }}.zip
+          path: build-artifacts/${{ env.NEW_RC_TAG }}.zip
