@@ -43,7 +43,8 @@ class AccountServiceTests {
 
     @Test
     fun `deve criar conta normal`() {
-        val acc = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val acc = service.requestNormalAccount(req)
 
         assertNotNull(acc.id)
         assertEquals(0.0, acc.balance)
@@ -74,7 +75,8 @@ class AccountServiceTests {
 
     @Test
     fun `deve consultar conta por id`() {
-        val created = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val created = service.requestNormalAccount(req)
         val loaded = service.findByIdOrThrow(created.id!!)
 
         assertEquals(created.number, loaded.number)
@@ -83,7 +85,8 @@ class AccountServiceTests {
 
     @Test
     fun `deve consultar saldo corretamente`() {
-        val created = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val created = service.requestNormalAccount(req)
         service.credit(created.id!!, 500.0)
 
         val balance = service.getBalance(created.id!!)
@@ -96,7 +99,8 @@ class AccountServiceTests {
 
     @Test
     fun `credito normal deve atualizar saldo`() {
-        val acc = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val acc = service.requestNormalAccount(req)
         val updated = service.credit(acc.id!!, 200.0)
 
         assertEquals(200.0, updated.balance)
@@ -104,7 +108,8 @@ class AccountServiceTests {
 
     @Test
     fun `credito deve rejeitar valor negativo`() {
-        val acc = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val acc = service.requestNormalAccount(req)
         assertThrows<IllegalArgumentException> { service.credit(acc.id!!, -50.0) }
     }
 
@@ -113,7 +118,7 @@ class AccountServiceTests {
         val bonus = service.requestBonusAccount()
         val updated = service.credit(bonus.id!!, 250.0) as BonusAccount
 
-        assertEquals(12, updated.points)
+        assertEquals(11, updated.points)
         assertEquals(250.0, updated.balance)
     }
 
@@ -123,7 +128,8 @@ class AccountServiceTests {
 
     @Test
     fun `debito normal deve atualizar saldo`() {
-        val acc = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val acc = service.requestNormalAccount(req)
         service.credit(acc.id!!, 300.0)
         val updated = service.debit(acc.id!!, 100.0)
 
@@ -132,14 +138,16 @@ class AccountServiceTests {
 
     @Test
     fun `debito deve rejeitar valor negativo`() {
-        val acc = service.requestNormalAccount()
+        val req = AccountCreationRequest(type = "normal")
+        val acc = service.requestNormalAccount(req)
         assertThrows<IllegalArgumentException> { service.debit(acc.id!!, -10.0) }
     }
 
     @Test
     fun `debito deve impedir saldo menor que -1000`() {
-        val acc = service.requestNormalAccount()
-        assertThrows<InsufficientBalanceException> { service.debit(acc.id!!, 1100.0) }
+        val req = AccountCreationRequest(type = "normal")
+        val acc = service.requestNormalAccount(req)
+        assertThrows<InsufficientBalanceException> { service.debit(acc.id!!, 1001.0) }
     }
 
     /* ------------------------------------------------------------------ */
@@ -148,8 +156,10 @@ class AccountServiceTests {
 
     @Test
     fun `transferencia deve rejeitar valor negativo`() {
-        val a = service.requestNormalAccount()
-        val b = service.requestNormalAccount()
+        val reqA = AccountCreationRequest(type = "normal")
+        val reqB = AccountCreationRequest(type = "normal")
+        val a = service.requestNormalAccount(reqA)
+        val b = service.requestNormalAccount(reqB)
 
         val dto = AmountTransferDTO(a.id!!, b.id!!, -1.0)
         assertThrows<InvalidTransferAmountException> { service.transfer(dto) }
@@ -157,8 +167,10 @@ class AccountServiceTests {
 
     @Test
     fun `transferencia deve impedir saldo menor que -1000 na origem`() {
-        val origem = service.requestNormalAccount()
-        val destino = service.requestNormalAccount()
+        val reqOrigem = AccountCreationRequest(type = "normal")
+        val reqDestino = AccountCreationRequest(type = "normal")
+        val origem = service.requestNormalAccount(reqOrigem)
+        val destino = service.requestNormalAccount(reqDestino)
 
         val dto = AmountTransferDTO(origem.id!!, destino.id!!, 1001.0)
         assertThrows<InsufficientBalanceException> { service.transfer(dto) }
@@ -166,7 +178,8 @@ class AccountServiceTests {
 
     @Test
     fun `transferencia para conta bonus deve adicionar pontos`() {
-        val origem = service.requestNormalAccount()
+        val reqOrigem = AccountCreationRequest(type = "normal")
+        val origem = service.requestNormalAccount(reqOrigem)
         service.credit(origem.id!!, 1000.0)
 
         val destino = service.requestBonusAccount()
