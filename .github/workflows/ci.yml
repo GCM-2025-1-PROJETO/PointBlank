@@ -1,0 +1,85 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Garantir permissão de execução ao Maven Wrapper
+        run: chmod +x ./mvnw
+
+      - name: Resolver dependências
+        run: ./mvnw dependency:resolve
+
+      - name: Resolver dependências, compilar e testar (Spring + Kotlin)
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Fazer build do projeto
+        run: ./mvnw -B -ntp compile
+
+      - name: Executar análise estática (PMD)
+        run: ./mvnw -B -ntp pmd:pmd
+
+      - name: Executar testes unitários
+        run: ./mvnw -B -ntp test
+
+      - name: Gerar e enviar tag build-<timestamp>
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          TIMESTAMP=$(date +"%Y%m%d%H%M%S")
+          TAG_NAME="build-${TIMESTAMP}"
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+
+      - name: Criar e enviar nova tag rc-X.Y na branch staging
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          git fetch --tags
+          
+          LAST_TAG=$(git tag --list "rc-*" | sort -V | tail -n 1)
+          
+          if [ -z "$LAST_TAG" ]; then
+            NEW_TAG="rc-1.0"
+          else
+            X=$(echo "$LAST_TAG" | cut -d'-' -f2 | cut -d'.' -f1)
+            Y=$(echo "$LAST__TAG" | cut -d'.' -f2)
+            NEW_Y=$((Y + 1))
+            NEW_TAG="rc-${X}.${NEW_Y}"
+          fi
+
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git tag "$NEW_TAG"
+          git push origin "$NEW_TAG"
+
+          mkdir -p build-artifacts
+          zip -r "build-artifacts/${NEW_TAG}.zip" .
+
+      - name: Upload do pacote como artifact
+        if: github.ref == 'refs/heads/staging'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NEW_TAG }}.zip
+          path: build-artifacts/${{ env.NEW_TAG }}.zip
