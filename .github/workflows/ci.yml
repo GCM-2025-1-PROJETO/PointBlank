@@ -28,6 +28,9 @@ jobs:
       - name: Garantir permissão de execução ao Maven Wrapper
         run: chmod +x ./mvnw
 
+      - name: Resolver dependências
+        run: ./mvnw dependency:resolve
+
       - name: Resolver dependências, compilar e testar (Spring + Kotlin)
         run: ./mvnw -B -ntp clean verify
 
