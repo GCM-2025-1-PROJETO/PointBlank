@@ -40,6 +40,9 @@ jobs:
       - name: Executar análise estática (PMD)
         run: ./mvnw -B -ntp pmd:pmd
 
+      - name: Executar testes unitários
+        run: ./mvnw -B -ntp test
+
       - name: Gerar e enviar tag build-<timestamp>
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
