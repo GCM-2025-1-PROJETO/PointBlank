@@ -109,16 +109,21 @@ jobs:
         id: get_tag
         run: |
           git fetch --tags --force
-          LATEST_RC_TAG=$(git tag --list "rc-*" | sort -V | tail -n 1)
-          
-          if [ -z "$LATEST_RC_TAG" ]; then
-            echo "Erro: Nenhuma tag 'rc-*' encontrada para basear a release de produção."
-            exit 1
+
+          LATEST_PROD_TAG=$(git tag --list "rel-*" | sort -V | tail -n 1)
+
+          if [ -z "$LATEST_PROD_TAG" ]; then
+            X=1
+            Y=0
+          else
+            VERSION_PART=$(echo "$LATEST_PROD_TAG" | cut -d'-' -f2)
+            X=$(echo "$VERSION_PART" | cut -d'.' -f1)
+            Y=$(echo "$VERSION_PART" | cut -d'.' -f2)
+            Y=$((Y + 1))
           fi
-          
-          X_VERSION=$(echo "$LATEST_RC_TAG" | cut -d'-' -f2 | cut -d'.' -f1)
-          NEW_PROD_TAG="rel-${X_VERSION}.0"
-          
+
+          NEW_PROD_TAG="rel-${X}.${Y}"
+
           echo "Nova tag de produção: $NEW_PROD_TAG"
           echo "PROD_TAG=$NEW_PROD_TAG" >> $GITHUB_ENV
           echo "REPO_OWNER_LC=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
