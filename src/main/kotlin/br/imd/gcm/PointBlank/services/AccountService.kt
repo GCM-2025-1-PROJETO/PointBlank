@@ -25,6 +25,10 @@ class AccountService(
     private val savingsAccountRepository: SavingsAccountRepository
 ) : BaseService<Account>(accountRepository) {
 
+    companion object {
+        private const val NEGATIVE_BALANCE_LIMIT = -1000.0
+    }
+
     fun update(id: Long, updated: Account): Account {
         val existing = findByIdOrThrow(id)
         existing.number = updated.number
@@ -56,7 +60,7 @@ class AccountService(
 
     fun requestSavingsAccount(@RequestBody request: AccountCreationRequest): SavingsAccount {
         val newNumber = accountRepository.getLastID() + 1
-        val acc = SavingsAccount(number = newNumber, balance = request.balance)
+        val acc = SavingsAccount(number = newNumber, balance = request.balance ?: 0.0)
         return savingsAccountRepository.save(acc)
     }
 
