@@ -1,13 +1,14 @@
-name: Continuous Integration
+name: Continuous Integration & Delivery
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, staging, production]
   pull_request:
     branches: [main]
 
 jobs:
   build:
+    if: github.ref != 'refs/heads/production'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,27 +22,18 @@ jobs:
       - name: Configurar JDK 21
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '21'
           cache: maven
 
       - name: Garantir permissão de execução ao Maven Wrapper
         run: chmod +x ./mvnw
 
-      - name: Resolver dependências
-        run: ./mvnw dependency:resolve
-
-      - name: Resolver dependências, compilar e testar (Spring + Kotlin)
+      - name: Resolver dependências, compilar, testar e empacotar
         run: ./mvnw -B -ntp clean verify
-
-      - name: Fazer build do projeto
-        run: ./mvnw -B -ntp compile
 
       - name: Executar análise estática (PMD)
         run: ./mvnw -B -ntp pmd:pmd
-
-      - name: Executar testes unitários
-        run: ./mvnw -B -ntp test
 
       - name: Gerar e enviar tag build-<timestamp>
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -56,7 +48,7 @@ jobs:
       - name: Criar e enviar nova tag rc-X.Y na branch staging
         if: github.ref == 'refs/heads/staging'
         run: |
-          git fetch --tags
+          git fetch --tags --force
           
           LAST_TAG=$(git tag --list "rc-*" | sort -V | tail -n 1)
           
@@ -69,21 +61,104 @@ jobs:
             NEW_TAG="rc-${X}.${NEW_Y}"
           fi
           
+          echo "NEW_RC_TAG=${NEW_TAG}" >> $GITHUB_ENV
+          
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git tag "$NEW_TAG"
           git push origin "$NEW_TAG"
-          
-          # Criação do pacote zip com o nome da tag
+
+      - name: Criar pacote para artifact (Staging)
+        if: github.ref == 'refs/heads/staging'
+        run: |
           mkdir -p build-artifacts
-          zip -r "build-artifacts/${NEW_TAG}.zip" .
+          find target -name "*.jar" -exec cp {} build-artifacts/${{ env.NEW_RC_TAG }}.jar \;
 
-          # Exportando a variável NEW_TAG para ser usada no próximo passo
-          echo "NEW_TAG=${NEW_TAG}" >> $GITHUB_ENV
-
-      - name: Upload do pacote como artifact
+      - name: Upload do pacote como artifact (Staging)
         if: github.ref == 'refs/heads/staging'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.NEW_TAG }}.zip
-          path: build-artifacts/${{ env.NEW_TAG }}.zip
+          name: ${{ env.NEW_RC_TAG }}.jar
+          path: build-artifacts/${{ env.NEW_RC_TAG }}.jar
+
+  release-production:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    needs: []
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configurar JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Garantir permissão de execução ao Maven Wrapper
+        run: chmod +x ./mvnw
+
+      - name: Definir tag de release (rel-X.0)
+        id: get_tag
+        run: |
+          git fetch --tags --force
+          LATEST_RC_TAG=$(git tag --list "rc-*" | sort -V | tail -n 1)
+          
+          if [ -z "$LATEST_RC_TAG" ]; then
+            echo "Erro: Nenhuma tag 'rc-*' encontrada para basear a release de produção."
+            exit 1
+          fi
+          
+          X_VERSION=$(echo "$LATEST_RC_TAG" | cut -d'-' -f2 | cut -d'.' -f1)
+          NEW_PROD_TAG="rel-${X_VERSION}.0"
+          
+          echo "Nova tag de produção: $NEW_PROD_TAG"
+          echo "PROD_TAG=$NEW_PROD_TAG" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Resolver dependências
+        run: ./mvnw -B -ntp dependency:resolve
+
+      - name: Buildar, testar e empacotar (Quality Gate)
+        run: |
+          ./mvnw -B -ntp clean verify
+          ./mvnw -B -ntp pmd:pmd
+
+      - name: Criar pacote para artifact (Produção)
+        run: |
+          mkdir -p release-artifacts
+          find target -name "*.jar" -exec cp {} release-artifacts/${{ env.PROD_TAG }}.jar \;
+
+      - name: Upload do pacote JAR como artifact (Produção)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PROD_TAG }}.jar
+          path: release-artifacts/${{ env.PROD_TAG }}.jar
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e Push da imagem Docker para o GHCR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ env.PROD_TAG }}
+
+      - name: Criar e enviar tag de release no Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git tag ${{ env.PROD_TAG }}
+          git push origin ${{ env.PROD_TAG }}
