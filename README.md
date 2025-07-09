@@ -17,4 +17,6 @@
 
 ---
 
+## Toda a nossa documentação e informações importantes estão disponíveis em nossa [Wiki](https://github.com/GCM-2025-1-PROJETO/PointBlank/wiki).
+
 > Este projeto tem caráter acadêmico e visa aplicar os conceitos de controle de versão, automação e processos de mudanças no ciclo de vida de software.
