@@ -144,10 +144,10 @@ class AccountServiceTests {
     }
 
     @Test
-    fun `debito deve impedir saldo menor que -1000`() {
+    fun `debito deve impedir saldo menor que -2000`() {
         val req = AccountCreationRequest(type = "normal")
         val acc = service.requestNormalAccount(req)
-        assertThrows<InsufficientBalanceException> { service.debit(acc.id!!, 1001.0) }
+        assertThrows<InsufficientBalanceException> { service.debit(acc.id!!, 2001.0) }
     }
 
     /* ------------------------------------------------------------------ */
@@ -166,13 +166,13 @@ class AccountServiceTests {
     }
 
     @Test
-    fun `transferencia deve impedir saldo menor que -1000 na origem`() {
+    fun `transferencia deve impedir saldo menor que -2000 na origem`() {
         val reqOrigem = AccountCreationRequest(type = "normal")
         val reqDestino = AccountCreationRequest(type = "normal")
         val origem = service.requestNormalAccount(reqOrigem)
         val destino = service.requestNormalAccount(reqDestino)
 
-        val dto = AmountTransferDTO(origem.id!!, destino.id!!, 1001.0)
+        val dto = AmountTransferDTO(origem.id!!, destino.id!!, 2001.0)
         assertThrows<InsufficientBalanceException> { service.transfer(dto) }
     }
 
