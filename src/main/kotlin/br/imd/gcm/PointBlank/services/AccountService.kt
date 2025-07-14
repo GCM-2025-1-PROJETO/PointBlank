@@ -26,7 +26,7 @@ class AccountService(
 ) : BaseService<Account>(accountRepository) {
 
     companion object {
-        private const val NEGATIVE_BALANCE_LIMIT = -2000.0
+        private const val NEGATIVE_BALANCE_LIMIT = -1000.0
     }
 
     fun update(id: Long, updated: Account): Account {
