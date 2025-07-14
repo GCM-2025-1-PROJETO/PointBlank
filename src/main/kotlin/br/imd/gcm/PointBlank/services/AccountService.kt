@@ -85,7 +85,6 @@ class AccountService(
 
         val account = findByIdOrThrow(id)
         account.balance += amount
-        account.balance -= amount
 
         if (account is BonusAccount) {
             account.points += (amount / 150).toInt()
