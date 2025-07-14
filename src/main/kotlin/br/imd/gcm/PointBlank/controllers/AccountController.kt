@@ -23,7 +23,6 @@ class AccountController(private val accountService: AccountService) {
 
     @GetMapping("/{id}")
     fun getById(@PathVariable id: Long): ResponseEntity<Account> =
-        errosintaxe
         accountService.findById(id)
             .map { ResponseEntity.ok(it) }
             .orElse(ResponseEntity.notFound().build())
